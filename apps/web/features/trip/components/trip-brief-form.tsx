@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,8 @@ export default function TripBriefForm({
   destinationName,
   destinationImage,
 }: TripBriefFormProps) {
+  const router = useRouter();
+
   const form = useForm<TripBriefFormValues>({
     resolver: zodResolver(tripBriefSchema),
     defaultValues: {
@@ -67,9 +70,10 @@ export default function TripBriefForm({
 
       // Rẽ nhánh logic
       if (!session) {
-        // Chưa đăng nhập
-        console.log("PHÁT HIỆN CHƯA ĐĂNG NHẬP. Yêu cầu đăng nhập.");
+        // Chưa đăng nhập - chuyển hướng đến trang login
+        console.log("PHÁT HIỆN CHƯA ĐĂNG NHẬP. Chuyển hướng đến trang login.");
         toast.error("Bạn cần đăng nhập để tiếp tục");
+        router.push("/login");
         return;
       }
 

@@ -54,7 +54,7 @@ const HomePage = () => {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div>
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div
@@ -76,10 +76,10 @@ const HomePage = () => {
                 danh sách kiểm tra thông minh và bảng kế hoạch trong ngày.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="text-lg h-14 px-8"
-                  onClick={() => router.push('/destinations')}
+                  onClick={() => router.push("/destinations")}
                 >
                   Chọn điểm đến
                 </Button>

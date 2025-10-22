@@ -49,11 +49,11 @@ export default async function Page() {
   const destinations = await fetchDestinations();
 
   return (
-    <main className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8">
       <h1 className="mb-6 text-2xl font-semibold">Chọn Điểm đến</h1>
       <Suspense fallback={<GridSkeleton />}>
         <DestinationsPage destinations={destinations} />
       </Suspense>
-    </main>
+    </div>
   );
 }
