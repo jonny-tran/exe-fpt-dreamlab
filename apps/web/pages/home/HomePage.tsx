@@ -203,7 +203,11 @@ const HomePage = () => {
             </div>
           </div>
           <div className="text-center mt-12">
-            <Button size="lg" className="text-lg h-14 px-8">
+            <Button
+              size="lg"
+              className="text-lg h-14 px-8"
+              onClick={() => router.push("/destinations")}
+            >
               Tạo chuyến đi đầu tiên của bạn
             </Button>
           </div>
@@ -252,7 +256,11 @@ const HomePage = () => {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Tham gia cùng các nhà tổ chức đang biến kế hoạch thành kỷ niệm
           </p>
-          <Button size="lg" className="text-lg h-14 px-12">
+          <Button
+            size="lg"
+            className="text-lg h-14 px-12"
+            onClick={() => router.push("/dashboard")}
+          >
             Bắt đầu - Miễn phí
           </Button>
 

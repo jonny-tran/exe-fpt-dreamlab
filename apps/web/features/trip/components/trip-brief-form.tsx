@@ -3,14 +3,22 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -34,6 +42,9 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { createTrip } from "@/app/trip/create/actions";
+import { GoogleLoginButton } from "@/components/auth/google-login-button";
+import { useState, useEffect } from "react";
 
 interface TripBriefFormProps {
   destinationId: string;
@@ -47,6 +58,8 @@ export default function TripBriefForm({
   destinationImage,
 }: TripBriefFormProps) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
 
   const form = useForm<TripBriefFormValues>({
     resolver: zodResolver(tripBriefSchema),
@@ -57,6 +70,41 @@ export default function TripBriefForm({
       goals: "",
     },
   });
+
+  // Kiểm tra dữ liệu đã lưu sau khi đăng nhập
+  useEffect(() => {
+    const checkPendingData = async () => {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session) {
+        const savedData = localStorage.getItem("pendingTripData");
+        if (savedData) {
+          try {
+            const parsedData = JSON.parse(savedData);
+            const payload = {
+              values: parsedData,
+              destinationId: destinationId,
+            };
+
+            const result = await createTrip(payload);
+            if (result.success) {
+              toast.success("Đã tạo kế hoạch thành công!");
+              router.push(`/trip/${result.data.newTripId}/itinerary`);
+              localStorage.removeItem("pendingTripData");
+            }
+          } catch (error) {
+            console.error("Error processing saved data:", error);
+            localStorage.removeItem("pendingTripData");
+          }
+        }
+      }
+    };
+
+    checkPendingData();
+  }, [destinationId, router]);
 
   const onSubmit = async (values: TripBriefFormValues) => {
     try {
@@ -70,20 +118,39 @@ export default function TripBriefForm({
 
       // Rẽ nhánh logic
       if (!session) {
-        // Chưa đăng nhập - chuyển hướng đến trang login
-        console.log("PHÁT HIỆN CHƯA ĐĂNG NHẬP. Chuyển hướng đến trang login.");
-        toast.error("Bạn cần đăng nhập để tiếp tục");
-        router.push("/login");
+        // Chưa đăng nhập - lưu dữ liệu form và hiển thị dialog đăng nhập
+        console.log(
+          "PHÁT HIỆN CHƯA ĐĂNG NHẬP. Lưu dữ liệu form và hiển thị dialog đăng nhập."
+        );
+        localStorage.setItem("pendingTripData", JSON.stringify(values));
+        setShowLoginDialog(true);
         return;
       }
 
-      // Đã đăng nhập
+      // Đã đăng nhập - gọi Server Action
       console.log("Đã đăng nhập. Dữ liệu form hợp lệ:", values);
       console.log("Chuẩn bị tạo chuyến đi với destinationId:", destinationId);
       console.log("User ID:", session.user.id);
 
-      // TODO: Gọi Server Action ở đây khi đã sẵn sàng
-      toast.success("Dữ liệu hợp lệ! Kiểm tra console để xem chi tiết.");
+      // Gọi Server Action trong startTransition
+      startTransition(async () => {
+        const payload = {
+          values: values,
+          destinationId: destinationId,
+        };
+
+        const result = await createTrip(payload);
+
+        if (result.success) {
+          toast.success("Đã tạo kế hoạch thành công!");
+          // Điều hướng đến trang itinerary
+          router.push(`/trip/${result.data.newTripId}/itinerary`);
+        } else {
+          toast.error(
+            result.error || "Tạo kế hoạch thất bại, vui lòng thử lại."
+          );
+        }
+      });
     } catch (error) {
       console.error("Lỗi khi xử lý form:", error);
       toast.error("Đã có lỗi xảy ra. Vui lòng thử lại.");
@@ -269,8 +336,20 @@ export default function TripBriefForm({
                 />
 
                 {/* Submit Button */}
-                <Button type="submit" size="lg" className="w-full">
-                  Tạo kế hoạch chuyến đi
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full"
+                  disabled={isPending}
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    "Tạo kế hoạch chuyến đi"
+                  )}
                 </Button>
               </form>
             </Form>
@@ -305,6 +384,26 @@ export default function TripBriefForm({
           </CardContent>
         </Card>
       </div>
+
+      {/* Login Dialog */}
+      <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Yêu cầu đăng nhập</DialogTitle>
+            <DialogDescription>
+              Bạn cần đăng nhập để tạo kế hoạch chuyến đi. Dữ liệu bạn đã điền
+              sẽ được lưu lại.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col space-y-4">
+            <GoogleLoginButton />
+            <p className="text-sm text-muted-foreground text-center">
+              Sau khi đăng nhập, kế hoạch sẽ được tạo tự động với thông tin bạn
+              đã điền.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
