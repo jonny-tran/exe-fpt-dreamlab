@@ -1,20 +1,23 @@
-"use-client";
+"use client";
 
+import heroImage from "@/assets/hero-landing.jpg";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
+  Calendar,
+  CheckSquare,
   Clock,
   Sparkles,
-  Users,
-  CheckSquare,
-  Calendar,
   TrendingUp,
+  Users,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import heroImage from "@/assets/hero-landing.jpg";
+import { useRouter } from "next/navigation";
 
 const HomePage = () => {
+  const router = useRouter();
+
   const features = [
     {
       icon: Clock,
@@ -73,7 +76,11 @@ const HomePage = () => {
                 danh sách kiểm tra thông minh và bảng kế hoạch trong ngày.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="text-lg h-14 px-8">
+                <Button 
+                  size="lg" 
+                  className="text-lg h-14 px-8"
+                  onClick={() => router.push('/destinations')}
+                >
                   Chọn điểm đến
                 </Button>
                 <Button
@@ -248,7 +255,7 @@ const HomePage = () => {
           <Button size="lg" className="text-lg h-14 px-12">
             Bắt đầu - Miễn phí
           </Button>
-          
+
           {/* Test 404 Link */}
           <div className="mt-8 pt-8 border-t border-border">
             <p className="text-sm text-muted-foreground mb-4">
